@@ -1,0 +1,67 @@
+---
+title: "ggplot2 Brushing"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+library(flexdashboard)
+library(tidyverse)
+library(ggplot2)
+
+dados = read_delim("https://www.stat.ubc.ca/~jenny/notOcto/STAT545A/examples/gapminder/data/gapminderDataFiveYear.txt")
+
+dados_2007 = filter(dados, year == 2007) 
+
+dados2 <- select(dados_2007, "country", "continent", "lifeExp", "gdpPercap", )
+```
+
+
+```{r}
+# Reactive that returns the whole dataset if there is no brush
+selectedData <- reactive({
+  data <- brushedPoints(dados2, input$plot1_brush)
+  if (nrow(data) == 0)
+    data <- dados2
+  data
+})
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Expectativa de vida PIB per capita {data-width=600}
+
+```{r}
+library(ggplot2)
+plotOutput("plot1", brush = brushOpts(id = "plot1_brush"))
+output$plot1 <- renderPlot({
+  ggplot(dados2, aes(x = gdpPercap, y = lifeExp, color = continent)) + 
+    geom_point(size = 3, alpha=0.5)
+  
+})
+```
+
+### Expectativa de vida por continente
+
+```{r}
+renderPlot({
+  ggplot(selectedData(), aes(x = factor(continent), y = lifeExp))  + geom_boxplot(aes(fill=continent)) 
+})
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### datalhe dos países  {data-width=400}
+
+```{r}
+renderTable({
+  selectedData()
+})
+```

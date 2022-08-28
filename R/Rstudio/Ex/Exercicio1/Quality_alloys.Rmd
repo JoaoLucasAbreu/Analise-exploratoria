@@ -1,0 +1,72 @@
+---
+title: "Quality Alloys"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+# A e B
+library(flexdashboard)
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+
+sqa = read_excel("Lista_de_exercicios_1.xlsx")
+sqa <- sqa %>%
+  select("Week (2008-2009)", "Period", "Avg. Time on Site (secs.)", "Profit") %>% 
+  rename(Semana = "Week (2008-2009)", Periodo = Period, Tempo_no_site = "Avg. Time on Site (secs.)", Lucro = Profit)
+```
+
+```{r, include=FALSE}
+sqa$Periodo <- factor(sqa$Periodo, levels = c("Shakedown", "Analysis 1", "Promotion", "Analysis 2"))
+levels(sqa$Periodo)
+```
+
+```{r}
+selectedData <- reactive({
+  data <- brushedPoints(sqa, input$plot1_brush)
+  if (nrow(data) == 0)
+    data <- sqa
+  data
+})
+```
+
+
+Column {data-width=700}
+-----------------------------------------------------------------------
+
+### Diagrama de Dispersão: Tempo no site x Lucro {data-width=650}
+
+```{r}
+plotOutput("plot1", brush = brushOpts(id = "plot1_brush"))
+output$plot1 <- renderPlot({
+  ggplot(sqa, aes(x = Lucro, y = Tempo_no_site, color = Periodo, shape = Periodo)) + 
+    geom_point(size = 3) 
+})
+```
+
+### Box Plot: Lucro X Periodo
+
+```{r}
+renderPlot({
+  ggplot(selectedData(), aes(x = Periodo, y = Lucro))  + 
+    geom_boxplot(aes(fill=Periodo)) 
+})
+```
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Painel Quality Alloys  {data-width=300}
+
+```{r}
+renderTable({
+  selectedData()
+})
+```
+

@@ -1,0 +1,138 @@
+---
+title: "Aula 03"
+author: "Johnny"
+date: "2022-08-17"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Como criar gráficos e tabelas?
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+dados = read_delim("https://www.stat.ubc.ca/~jenny/notOcto/STAT545A/examples/gapminder/data/gapminderDataFiveYear.txt")
+
+dados_2007 = filter(dados, year == 2007) 
+```
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+dados_2007
+```
+
+## GGPlot2
+
+Gráfico de colunas mais simples
+
+```{r}
+ggplot(dados_2007, aes(x = continent)) + 
+  geom_bar()
+```
+
+O argumento "aes" que é a estética indica o sistema de coordenadas do gráfico
+
+```{r}
+ggplot(dados_2007, aes(y = continent)) + geom_bar()
+
+```
+
+Para colorir, basta inserir uma váriavel no argumento *fill*.
+
+```{r}
+ggplot(dados_2007, aes(x = continent, fill =continent)) + geom_bar()
+```
+
+Para colorir somente a borda, utilize o argumento ***color***
+
+```{r}
+ggplot(dados_2007, aes(x = continent, color =continent)) + 
+  geom_bar()
+```
+
+Para colorir em *fadeway* use + scale_fill_brewer("Blues")
+
+```{r}
+ggplot(dados_2007, aes(x = continent, fill =continent)) +
+  geom_bar() +
+  scale_fill_brewer("Blues")
+```
+
+As *annoations* são os títulos dos eixos, geral, etc. Esse layer é chamado de **labs**
+
+```{r}
+g1 =ggplot(dados_2007, aes(x = continent, fill = continent)) + 
+  geom_bar() +
+  scale_fill_brewer() +
+  labs(title = "Países por continente",
+       subtitle = "Gap Minder 2007",
+       x = "",
+       y = "",
+       fill = "Continente")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+g2 =ggplot(dados_2007, aes(x = continent, fill = continent)) + 
+  geom_bar() +
+  scale_fill_brewer() +
+  labs(title = "Países por continente",
+       subtitle = "Gap Minder 2007",
+       x = "",
+       y = "",
+       fill = "Continente") +
+      theme_dark()
+```
+### Boxplot
+```{r}
+g3 =ggplot(dados_2007, aes(x=continent, y=lifeExp, fill=continent)) + 
+  geom_boxplot() + scale_fill_brewer(palette = 'YlOrRd') +
+  guides(fill = "none") + # Tirar Legenda 
+  labs(title = "Expectativa de vida por continente", 
+       subtitle = "Gap Minder 2007",
+       x ="",
+       y ="Expectativa de vida - em anos") 
+```
+
+### Dispersão
+```{r}
+g4 = ggplot(dados_2007, aes(x = gdpPercap, y = lifeExp, color = continent)) +
+  geom_point(size = 3, alpha=0.5) + 
+    labs(title = "Expectativa de vida por continente", 
+       subtitle = "Gap Minder 2007",
+       x ="PIB per capita",
+       y ="Expectativa de vida - em anos",
+       color ="Continente") + theme_classic()
+```
+```{r}
+library(gridExtra)
+grid.arrange(g1, g2, g3, g4, ncol=2)
+```
+### Pizza
+```{r, echo = FALSE}
+tabela = table(dados_2007$continent)
+tabela = data.frame(tabela)
+
+degrade = colorRampPalette(c("darkblue", "lightblue"))
+graf1 <- ggplot(tabela, aes(x="",y= Freq,fill = Var1))+
+  geom_bar(stat="identity", width = 1)+
+  scale_fill_manual(values=degrade(nrow(tabela)))+
+  coord_polar("y",start = 0) + labs(fill = "Continente")
+
+library(gridExtra)
+grid.arrange(g1, graf1, g3, g4, ncol=2) 
+```
+```{r}
+install.packages("flexdashboard", dependecies = TRUE)
+library("flexdashboard")
+```
