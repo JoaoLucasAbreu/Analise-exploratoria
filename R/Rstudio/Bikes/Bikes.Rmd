@@ -1,0 +1,130 @@
+---
+title: "Bikes_Everywhere"
+author: "Felipe Joubeir, Guilherme Joaquim, João Lucas Abreu, Vinicius Pierre"
+date: "2022-08-31"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+setwd("C:/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Bikes")
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(knitr)
+library(dplyr)
+library(gridExtra)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Bikes Everywhere
+
+## Vendas
+
+```{r vendas, echo=FALSE}
+vendas= read_excel("/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Bikes/Bikes_Everywhere.xlsx")
+vendas = select(vendas, 'Cluster', "Cod_Loja", "Loja", "Estado", "Categoria", "Modelo", "Periodo", "Faturamento", "Margem")
+kable(head(vendas))
+```
+
+### Gráfico de Barra
+
+Número de vendas por categoria
+
+```{r pressure, echo=FALSE}
+vendas_categoriaf = filter(vendas, Estado != "NA")
+barra = ggplot(vendas_categoriaf, aes(x =, y = Categoria, fill = Categoria))+
+  geom_bar() +
+  labs(title = "Produtos mais vendidos",
+       subtitle = "Dados Bikes Everywhere 2015",
+       y = "",
+       x = "",
+       fill = "Categoria") +
+      theme_classic()
+
+barra
+```
+
+### Gráfico de BoxPlot
+
+Log da margem X Estado
+
+```{r boxplot, echo=FALSE, warning=FALSE}
+vendas_estadosf = filter(vendas, Estado != "NA")
+boxplot = ggplot(vendas_estadosf, aes(x = log(Margem), y = Estado, fill= Estado))  + 
+    geom_boxplot() + 
+    labs(title = "Médias de venda por Estado",
+       subtitle = "Dados 'Bikes Everywhere 2015",
+       y = "",
+       x = "") +
+      theme_classic()
+
+boxplot
+
+```
+
+### Gráfico de dispersão
+
+```{r dispersao, echo= FALSE}
+
+base = read_excel("/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Bikes/Bikes_Everywhere.xlsx")
+grupo = group_by(base, Periodo)
+grupo = drop_na(grupo)
+grupo$Periodo = factor(grupo$Periodo,
+levels = c("2015_1","2015_2","2015_3","2015_4","2015_5","2015_6","2015_7","2015_8","2015_9","2015_10","2015_11","2015_12"))
+tabela = summarise(grupo, media = mean(Margem))
+
+tabela = drop_na(tabela)
+dispersao = ggplot(tabela, aes(y = Periodo, x = media)) +
+    geom_point(aes(color = Periodo), size = 3) +
+    scale_fill_brewer() +
+    labs(title = "Periodo X Margem",
+         subtitle = "Bike Everywhere 2019",
+         x = "Período",
+         y = "Margem",
+        color = "Margem") +
+        theme_classic()
+dispersao
+
+```
+
+### Gráfico de Barra 2
+
+```{r barra2, echo=FALSE}
+base = drop_na(base)
+barra2 = ggplot(base, aes(x =, y = Cluster, fill = Cluster))+
+      geom_bar() +
+      labs(title = "Quantidade de Clientes por categoria",
+       subtitle = "Dados Bikes Everywhere 2015",
+       y = "",
+       x = "",
+       fill = "CLuster") +
+      theme_classic()
+barra2
+
+```
+
+```{r, include= FALSE}
+vendas_categoriaf = filter(vendas, Estado != "NA")
+barra3 = ggplot(vendas_categoriaf, aes(x =, y = Categoria, fill = Categoria))+
+  geom_bar() +
+  guides(x = "none") +
+  labs(title = "Produtos mais vendidos",
+       subtitle = "Dados Bikes Everywhere 2015",
+       y = "",
+       x = "",
+       fill = "Categoria") +
+      theme_classic()
+
+barra
+```
+
+### Grid
+
+```{r grid, echo=FALSE}
+
+grid.arrange(barra3, boxplot, dispersao, barra2, ncol=2)
+
+```

@@ -1,0 +1,75 @@
+---
+title: "Aula06-Segmentação"
+author: "João Lucas Abreu"
+date: "2022-09-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Refrigerantes
+
+```{r}
+library(readxl)
+setwd("C:/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Aulas/Aula06")
+refri = read_excel("Refrigerantes.xlsx")
+```
+
+Um estudo com algumas marcas de refrigerantes gostaria de identificar quais são os fatores que mais agradam o consumidor na hora da compra.
+
+```{r}
+# Todas as colunas menos a segunda
+refri <- refri[,-2] 
+
+# Guarda a Identificação das marcas em um objeto
+marcas <- refri$MARCA
+
+# Calcula as distâncias dos dados padronizados
+distancia <- dist(scale(refri[,2:8]))
+
+```
+
+### Dendograma
+
+```{r}
+# Usar um método "single", "complete", "average", "ward.d2", etc.
+h = hclust(distancia, method = "complete")
+plot(h, labels = marcas, ylab = "distancia")
+rect.hclust(h, 3) # Mostrar quantidade de clusters indicada/ subdividir
+```
+
+A escolha da quantidadede clusters é arbitrária. Então, não existe uma quantidade correta.
+
+Exemplo: a distância entre as linhas 12 e 24 é 0, pois as respostas são exatamente iguais.
+
+Para trocar os números pelos rótulos ajuda a entender a predominância de cada um dos clusters.
+
+```{r}
+
+plot(h, labels = marcas, y='distancia')
+analise = scale(refri[,2:8])
+heatmap(analise, labRow = marcas) # Scale calcula os score, calcula a média e divide pelo desvio padrão
+```
+
+O mapa de calor facilita a análise dos perfis dos clusters. Cada macnha indica um destaque do cluster.
+
+Ex:
+
+Clusters Sprite : destaque me sabor e saúde.
+
+Cluster Fanta: destaque para as questões da saúde
+
+Cluster Coca: destaque para sabor
+
+```{r}
+library(cluster) 
+dat = scale(refri[,2:8])
+grupos = kmeans(dat,3)
+clusters = as.factor(grupos$cluster)
+refri2 = cbind(refri, clusters)
+clusplot(dat, grupos$cluster, color=TRUE, shade=TRUE, labels=2, lines=0, main = "Clustering")
+
+write.csv2(refri2, "Clusters.csv", row.names = FALSE)
+```

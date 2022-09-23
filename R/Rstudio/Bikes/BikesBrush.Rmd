@@ -1,0 +1,62 @@
+---
+title: "ggplot2 Brushing"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+library(datasets)
+library(readxl)
+library(tidyverse)
+library(knitr)
+setwd("C:/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Bikes")
+dados = read_excel("/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Bikes/Bikes_Everywhere.xlsx")
+dados2 = filter(dados, Categoria == "Bikes")
+vendas <- dados2[, c("Modelo", "Faturamento", "Margem")]
+```
+
+
+```{r}
+selectedData <- reactive({
+  data <- brushedPoints(vendas, input$plot1_brush)
+  if (nrow(data) == 0)
+    data <- vendas
+  data
+})
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Gráfico de Faturamento x Lucro {data-width=600}
+
+```{r}
+library(ggplot2)
+plotOutput("plot1", brush = brushOpts(id = "plot1_brush"))
+output$plot1 <- renderPlot({
+  ggplot(vendas, aes(Faturamento, Margem, color = Margem)) + geom_point() 
+})
+```
+
+### Modelo de bicicleta por Margem
+
+```{r}
+renderPlot({
+  ggplot(selectedData(), aes(factor(Modelo), Margem, fill = model.offset()))  + geom_boxplot()
+})
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Car Details {data-width=400}
+
+```{r}
+renderTable({
+  selectedData()
+})
+```

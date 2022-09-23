@@ -133,6 +133,5 @@ library(gridExtra)
 grid.arrange(g1, graf1, g3, g4, ncol=2) 
 ```
 ```{r}
-install.packages("flexdashboard", dependecies = TRUE)
-library("flexdashboard")
+
 ```
