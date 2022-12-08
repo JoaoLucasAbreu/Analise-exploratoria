@@ -1,0 +1,80 @@
+---
+title: "Séries temporais"
+author: "Cléber Figueiredo"
+date: "26/10/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Análise de uma série
+
+Foi realizada a busca pelo termo de busca "protetor solar" no Google Trends e os dados coletados aparecem a seguir:
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+
+setwd("C:/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Aulas/Aula10")
+library(readxl)
+dados = read_excel("multiTimeline.xlsx")
+protetor = ts(dados$Buscas, start = c(2017,1), frequency = 12)
+protetor
+
+plot(protetor, main = "Buscas em % pelo termo protetor solar")
+```
+
+A sazonalidade é observada diretamente no gráfico. A periodicidade é de 12 em 12 observações.
+
+O próximo passo é identificar as componentes da série.
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+
+########## COMPONENTES DA SÉRIE ###########
+decomp <- decompose(protetor, type = "multiplicative")
+
+plot(decomp)
+
+decomp$figure
+sum(decomp$figure)
+
+plot(decomp$figure,
+     type = 'b',
+     xlab = 'Mês',
+     ylab = 'Índice de sazonalidade',
+     col = 'blue')
+
+
+```
+
+O gráfico da decomposição mostra as componentes de tendência (obtida via a técnica de médias móveis), a sazonalidade e a componente aleatória.
+
+A soma dos índices de sazonalidade precisa ser igual a quantidade de observações que forma um período. Aqui, a soma precisa ser igual a 12 (sum(decomp$figure)).
+
+O gráfico do índice de sazonalidade mostra quando as buscas estão acima ou abaixo da média. A referência é o valor 1. Acima de 1, teremos buscas acima da média dos últimos 12 meses e abaixo de 1, teremos buscas abaixo da média dos últimos 12 meses.
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+
+########### MODELAGEM ###############
+library(forecast)
+model <- auto.arima(protetor)
+
+# summary(model)
+
+f <- forecast(model, h = 14)
+library(ggplot2)
+autoplot(f, xlim=c(2021,2024))
+
+library(knitr)
+options(digits = 4)
+kable(f, caption = "Valores previstos")
+
+
+```
+
+O primeiro passo para a modelagem é aprender como os dados se comportaram no passado com a função auto.arima (ARIMA = autoregressive integrated moving average).
+
+As previsões apresentam três cenários: o realista (Point Forecast), o pessimista (Lo 80 e o Lo 95) e o otmista (Hi 80 e o Hi 95).
+
+Para os cenários pessimistas e otimistas são apresentadas duas abordagens: uma com 80% de confiança e outra com 95% de confiança.
+

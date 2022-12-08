@@ -1,0 +1,52 @@
+---
+title: "Tv"
+author: "João Lucas Abreu"
+date: "2022-10-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## TV Aberta
+
+```{r, echo =FALSE,message=FALSE,warning=FALSE}
+setwd("C:/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Tv")
+library(readxl)
+library(knitr)
+emissoras  = read_excel("TV_aberta_4A.xlsx", sheet = "TV")
+dados = data.frame(emissoras, row.names = 1)
+kable(dados, caption = "Abordagem Derivada")
+```
+
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+# É necessário instalar o pacote factoextra
+library(factoextra)
+
+# A função prcomp indica as direções dos atributos
+res.pca = prcomp(dados)
+
+fviz_pca_ind(res.pca,
+             col.ind = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+
+fviz_pca_biplot(res.pca, repel = TRUE,
+                col.var = "#2E9FDF",
+                col.ind = "#696969")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

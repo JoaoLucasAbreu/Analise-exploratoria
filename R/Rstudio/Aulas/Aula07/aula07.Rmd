@@ -1,0 +1,117 @@
+---
+title: "Atividade"
+author: "João Lucas Abreu Nogueira"
+date: "2022-09-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("C:/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Aulas/Aula07")
+library(readxl)
+ex1 = read_excel("Lista_de_exercícios2.xlsx", sheet = "Ex1")
+ex2 = read_excel("Lista_de_exercícios2.xlsx", sheet = "Ex2")
+ex3 = read_excel("Lista_de_exercícios2.xlsx", sheet = "Ex3")
+#dados <- data.frame(dados, row.names = TRUE)
+```
+
+# Lista de Exercício 2
+
+## 1)
+
+Um diretor de uma instituição financeira que presta serviços para agências bancárias em Barueri deseja agrupar os municípios abaixo de acordo com a quantidade de agências e o valor do caixa dentro de cada município.
+
+### a)
+
+Considerando as variáveis acima, obtenha a matriz de distância (calcular a distância Euclidiana). Apresente-a.
+
+```{r 1-a, echo=FALSE, warning=FALSE}
+library(readxl)
+
+ex1a = data.frame(ex1[,1:2], row.names= TRUE)
+
+#Calcular as distâncias dos dados padronizados
+distancia = dist(scale(ex1a))
+round(distancia, 2)
+```
+
+### b)
+
+Com base na matriz de distâncias, é possível perceber que são bernardo tem características mais próximas de Barueri. Qual o local mais parecido com Barueri para se abrir uma filial da instituição financeira? Use o código abaixo para apresentar a solução:
+
+```{r 1-b, echo=FALSE, warning=FALSE}
+library(leaflet)
+mapa <- leaflet() %>%
+    addTiles() %>%  
+    addMarkers(
+    lng= ex1$Longitude,  # inserir os dados com as longitudes
+    lat= ex1$Latitude,    # inserir os dados com as latitudes
+    popup=c("Matriz","Desconsiderada","Possível filial","Desconsiderada"))  # escrever um comentário
+mapa
+```
+
+## 2)
+
+Um recrutador de RH deseja agrupar os candidatos a uma determinada vaga em três\
+grupos considerando duas variáveis: o tempo de formação do candidato e o tempo que o\
+candidato permaneceu na empresa anterior. A Tabela apresenta os valores das variáveis\
+para os cinco candidatos que investiram uma candidatura.
+
+### a)
+
+Agrupe-os em três grupos e trace o perfil de cada grupo.
+
+```{r 2-a}
+ex2a = data.frame(ex2[,1:3], row.names= TRUE)
+
+#Guarda a identificação das marcas em um objeto
+candidatos <- ex2$Candidato
+
+#Calcular as distâncias dos dados padronizados 
+distancia = dist(scale(ex2a))
+print(distancia)
+# Usar um método "single", "complete", "average", "ward.D2", etc.
+h  = hclust(distancia, method = "complete" )
+plot(h, labels = candidatos, ylab='distancia')
+rect.hclust(h,3)
+```
+
+## 3)
+
+Um técnico ajustou uma análise de cluster para separar jogadores de futebol,\
+integrantes dos melhores clubes e seleções do mundo, em grupos. Essa avaliação levou\
+em conta a idade dos jogadores, valor de mercado e salário de 2019, e algumas avaliações\
+como reputação internacional e classificação geral e potencial (escores).
+
+```{r 3, echo=TRUE}
+
+# Todas as colunas menos a segunda
+distancia <- dist(scale(ex3[,4:9])) 
+
+# Guarda a Identificação das marcas em um objeto
+nomes <- ex3$Name
+
+h  = hclust(distancia, method = "complete" )
+plot(h, labels = nomes, ylab='distancia')
+```
+
+### a)
+
+```{r 3-a}
+
+
+
+```
+
+Qual jogador é o mais distinto de todos os outros?
+
+### b)
+
+Exclua o jogador mais distinto de todos. Considerando apenas 3 grupos, quais jogadores\
+estão em cada grupo?
+
+## 4)
+
+Leia o texto acerca da Distância de Gower e segmentação com variáveis categorizadas.\
+Reproduza-o no seu computador.

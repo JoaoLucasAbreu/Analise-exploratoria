@@ -1,0 +1,162 @@
+---
+title: "Regressão Múltipla"
+author: "Cléber Figueiredo"
+date: "09/11/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exemplo 1 - volume de negociações no mercado à vista na B3
+
+Neste exemplo, vamos entender quais são os fatores que afetam o volume de transações no mercado à vista na B3 por pessoas físicas, tendo como variáveis regressoras: IPCA, TAXA DE JUROS, PIB, POUPANÇA e EMBI+.
+
+O EMBI+ é a sigla para o chamado *Emerging Markets Bond Index Plus*, ou seja, o Índice de Títulos da Dívida de Mercados Emergentes, criado pelo Banco estadunidense JP Morgan ainda na década de 1990. O objetivo principal do EMBI+ é medir o desempenho dos títulos públicos emitidos em 19 países considerados emergentes ou em desenvolvimento.
+
+Todas as variáveis estão apresentadas em variação percentual.
+
+Objetivo: identificar quais variáveis são as que mais afetam o volume de transações e de forma ocorre o efeito (análise dos coeficientes angulares das variáveis que permanecerem no modelo). **Use alfa = 10%**.
+
+```{r, include = FALSE}
+library(readxl)    # Ler Excel
+library(ggplot2)   # Fazer gráficos
+library(knitr)     # Fazer tabelas
+library(GGally)    # Novo: análise de correlação
+library(car)       # Novo: Indica a presença de multicolinearidade
+library(MASS)      # Novo: Selecionar variáveis
+library(lmtest)    # Novo: Testes específicos de regressão
+
+setwd("C:/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Aulas/Aula11")
+dados <- read_excel("Aula11.xlsx", sheet ="Exemplo1")
+
+dados <- dados[,2:7]
+```
+
+### Etapa descritiva
+
+```{r, echo = FALSE}
+ggpairs(dados)
+
+```
+
+O gráfico acima apresenta na matriz triângulo superior as correlações entre as variáveis. Na matriz triângulo inferior aparecem os diagramas de dispersão 2 a 2. Na diagonal principal aparecem esboços das distribuições de probabilidade de cada uma das variáveis.
+
+Um primeiro problema que o gráfico nos revela é a correlação alta entre as variáveis supostamente independentes: POUP e JUROS (=0.894). Num modelo de regressão múltipla, as variáveis independentes precisam ser de fato independentes.
+
+Quando as variáveis independentes apresentam relação entre si, esse problema é chamado do MULTICOLINEARIDADE. Para detectar se de fato ele ocorre, utilizamos uma medida chamada VIF (Variance Inflation Factor). Se o VIF for maior do que 5, precisamos eliminar a variável independente do modelo.
+
+```{r, echo = FALSE}
+
+modelo1 = lm(VOLUME ~ IPCA + JUROS + PIB 
+             + POUP + EMBI, data = dados) 
+kable(round(vif(modelo1),2), caption = "VIF com todas as variáveis")
+```
+
+O vif = 1/(1 - R²). O R² foi obtido supondo que a variável que aparece associada ao VIF é o y.
+
+R² = mostra a % de explicação de uma regressão. Quanto mais próximo de 1, maior a explicação.
+
+IPCA = JUROS + PIB + POUP + EMBI ( 1.016454 )
+
+(...)
+
+JUROS = IPCA + PIB + POUP + EMBI (5.357400)
+
+POUP = JUROS + IPCA + PIB + EMBI (5.059556)
+
+Dois VIFs foram detectados como maiores do que 5. Então a dica é eliminar a variável x que possui a menor correlação, em módulo, com a variável y original (VOLUME).
+
+A análise das correlações indica que a variável POUP é a que possui a menor correlação, em módulo, com o VOLUME (=-0.139).
+
+```{r, echo = FALSE}
+
+modelo2 = lm(VOLUME ~ IPCA + JUROS + PIB 
+             + EMBI, data = dados) 
+kable(round(vif(modelo2),2), caption = "VIF sem a variável POUP")
+```
+
+Eliminar uma variável x muito correlacionada com outra não é problema algum. A variável que permanece no modelo "responde pelas duas".
+
+### Etapa inferencial
+
+```{r, echo = FALSE}
+
+resultado2 = summary(modelo2)
+kable(round(resultado2$coefficients,2), caption = "Resultados preliminares")
+```
+
+Marginalmente, as variáveis IPCA e PIB são irrelevantes para a predição do volume de negociações no mercado à vista (valores-p marginais são maiores do que 10%). Já as variáveis JUROS e EMBI são significativas marginalmente (valores-p menores do que 10%).
+
+Para saber quais variáveis ficam e quais variáveis saem do modelo, utilizaremos um processo de seleção automático chamado *backward stepwise*. O critério utilizado é chamado de critério de informação de Akaike (AIC). Quanto menor o AIC, melhor o ajuste.
+
+```{r, include = FALSE}
+
+selecao = stepAIC(modelo2, direction = "backward")
+modelo3 = lm(selecao$call, data = dados)
+resultado3 = summary(modelo3)
+
+```
+
+```{r, echo = FALSE}
+kable(round(resultado3$coefficients,2), caption = "Resultados finais")
+
+```
+
+A equação de regressão final fica:
+
+$$
+Volume = 0.03 -0.25*Juros -0.18*EMBI+
+$$
+
+O coeficiente linear igual a $0.03$ indica que quando as duas outras variáveis forem iguais a zero, espera-se um volume de transações no mercado à vista de 3% (0.03 = 3%). As variações percentuais iguais a zero indicam um momento de estabilidade da taxa de juros e do EMBI+.
+
+Já o coeficiente angular $|-0,25|$ indica o decréscimo médio na variação do volume de negociações no mercado à vista, quando a variação da taxa de juros aumenta em uma unidade, supondo que EMBI seja constante (ceteris paribus).
+
+O outro coeficiente angular $|-0,18|$ é o decréscimo médio dado à variação do volume de negociações no mercado à vista, quando a variação do EMBI+ aumenta em uma unidade, ceteris paribus.
+
+As variações dos coeficientes aparecem na próxima tabela:
+
+```{r, echo = FALSE}
+
+intervalo = confint(modelo3, level = 0.90)
+kable(round(intervalo,2), caption = "Intervalos de variação dos coeficientes com 90% de confiança")
+```
+
+### Uso do modelo para previsão
+
+Para usar o modelo para previsão, sempre utilizar a última modelagem. A última modelagem é a parcimoniosa (menos é mais).
+
+Suponha que eu queira saber o volume de negociações no mercado à vista se a taxa de juros tiver uma variação positiva de 1% (=0,01) e o EMBI+ tiver uma variação negativa de 2% (=-0,02).
+
+```{r, echo = FALSE}
+
+# Previsão intervalar no modelo
+# Insira o valor de x1, x2, x3 etc no lugar de ???
+# Se xp for uma variável categorizada, o valor de xp
+# deve aparecer entre aspas.
+
+newdata = data.frame(JUROS = c(0.01), EMBI = c(-0.02)) 
+
+prev1 = predict(modelo3, newdata, interval = "confidence", level= 0.90)
+
+kable(round(prev1,2), caption = "Intervalo de confiança com 90% de confiança")
+
+prev2 = predict(modelo3, newdata, interval = "prediction", level= 0.90)
+
+kable(round(prev2,2), caption = "Intervalo de predição com 90% de confiança")
+
+```
+
+Há duas opções de previsão intervalar: a que estabelece um intervalo de confiança e outra que estabelece um intervalo de predição. Qual a diferença?
+
+Intervalo de confiança: está baseado nos valores observados na amostra e o intervalo para a média de variação do volume de negociações estará baseado em informações passadas.
+
+Intervalo de predição: está baseado em um cenário futuro. Isso explica porque o intervalo de predição tem os limites um pouco mais amplos do que no intervalo de confiança.
+
+```{r}
+library(rgl)
+scatter3d(VOLUME~EMBI+JUROS, data=dados)
+```
+

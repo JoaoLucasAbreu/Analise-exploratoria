@@ -1,0 +1,135 @@
+---
+title: "Exemplo 4 - Ré-binho"
+author: "Cléber Figueiredo"
+date: "16/11/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exemplo 4 - Tempo de uma volta na Fórmula qualquer coisa
+
+Ré-binho foi para a pista várias vezes, cada vez, com uma configuração diferente no seu carro. Use alfa = 5%.
+
+### a) Determinar a equação que relaciona o tempo de cada volta com as variáveis: peso, potência, combustível, aerofolio e pneu.
+
+
+
+
+```{r, include = FALSE}
+library(readxl)    # Ler Excel
+library(ggplot2)   # Fazer gráficos
+library(knitr)     # Fazer tabelas
+library(GGally)    # Novo: análise de correlação
+library(car)       # Novo: Indica a presença de multicolinearidade
+library(MASS)      # Novo: Selecionar variáveis
+library(lmtest)    # Novo: Testes específicos de regressão
+
+setwd("C:/Users/J.ABREU/OneDrive - ESPM/4° SEMESTRE/R/Rstudio/Aulas/Aula11")
+dados <- read_excel("Aula11.xlsx", sheet ="Exemplo4")
+
+dados$aerofolio = factor(dados$aerofolio, levels = c("sim", "não"))
+dados$pneu = factor(dados$pneu, levels = c("macio", "rígido"))
+
+```
+
+### Etapa descritiva
+
+```{r, echo = FALSE, message = FALSE}
+ggpairs(dados)
+
+```
+
+
+Parece que as variáveis pneu e aerofólio são significativas. 
+
+A variável combustível está muito correlacionada com o peso, porque quanto mais combustível mais pesado o carro fica.
+
+```{r, echo = FALSE}
+
+modelo1 = lm(tempo ~ peso + potencia + combustivel, data = dados) 
+kable(round(vif(modelo1),2), caption = "VIF com todas as variáveis quantitativas")
+```
+
+
+A análise das correlações indica que a variável peso é a que possui a menor correlação, em módulo, com o tempo (=-0.029).
+
+```{r, echo = FALSE}
+
+modelo2 = lm(tempo ~ potencia + combustivel, data = dados) 
+kable(round(vif(modelo2),2), caption = "VIF sem a variável peso")
+```
+
+
+### Etapa inferencial
+
+
+```{r, echo = FALSE}
+modelo3 = lm(tempo ~ potencia + combustivel + aerofolio + pneu, data = dados) 
+resultado3 = summary(modelo3)
+kable(round(resultado3$coefficients,2), caption = "Resultados preliminares")
+```
+
+Marginalmente, a variável combustível não parece influenciar o tempo da volta.
+
+Para saber quais variáveis ficam e quais variáveis saem do modelo, utilizaremos um processo de seleção automático chamado *backward stepwise*. O critério utilizado é chamado de critério de informação de Akaike (AIC). Quanto menor o AIC, melhor o ajuste.
+
+```{r, include = FALSE}
+
+selecao = stepAIC(modelo3, direction = "backward")
+modelo4 = lm(selecao$call, data = dados)
+resultado4 = summary(modelo4)
+
+```
+
+```{r, echo = FALSE}
+kable(round(resultado4$coefficients,2), caption = "Resultados finais")
+
+```
+
+A equação de regressão final fica:
+
+$$
+tempo = 61.89 - 0.03*potencia + 0.17*combustível - 2.98*aerofolioSIM
++ 3.81*pneurígido
+$$
+
+O valor $|-0.03|$ indica que o tempo diminui, em média, $0.03$ segundos, quando a potência aumenta em uma unidade (cavalo), mantidas as outras variáveis constantes.
+
+O valor $|3.81|$ indica que o tempo aumenta $3.81$ segundos, quando o pneu do carro tem borracha rígida em comparação com a macia, mantidas as outras variáveis constantes.
+
+
+As variações dos coeficientes aparecem na próxima tabela:
+
+```{r, echo = FALSE}
+
+intervalo = confint(modelo4, level = 0.95)
+kable(round(intervalo,2), caption = "Intervalos de variação dos coeficientes com 90% de confiança")
+```
+
+### b) Prever o tempo que Ré-binho leva com o carro configurado sem aerofólio, pneu macio, 500 Kg de peso, 46 l de combustível e motor com 500 cavalos de potência. Use a confiança de 95%.
+
+Para usar o modelo para previsão, sempre utilizar a última modelagem. A última modelagem é a parcimoniosa (menos é mais).
+
+
+```{r, echo = FALSE}
+
+# Previsão intervalar no modelo
+# Insira o valor de x1, x2, x3 etc no lugar de ???
+# Se xp for uma variável categorizada, o valor de xp
+# deve aparecer entre aspas.
+2
+newdata = data.frame(peso = 500, aerofolio = "não",
+                     pneu = "macio", combustivel = 46,
+                     potencia = 500)
+
+prev1 = predict(modelo4, newdata, interval = "confidence", level= 0.95)
+
+kable(round(prev1,2), caption = "Intervalo de confiança com 95% de confiança")
+
+
+```
+
+Segundo a configuração do enunciado, no melhor cenário, a volta estaria completa em 53.83 segundos e, no pior cenário, em 57.87 segundos.
